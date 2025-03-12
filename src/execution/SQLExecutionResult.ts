@@ -1,6 +1,6 @@
 import { Result } from './Result';
 import { SQLExecutionNode } from '../protocol/SQLExecutionNode';
-import { Identity, RequestContext } from '../types';
+import { Identity, RequestContext, DatabaseConnectionInstance } from '../types';
 
 /**
  * Result of a SQL execution
@@ -30,7 +30,7 @@ export class SQLExecutionResult extends Result {
     private readonly sqlExecutionNode: SQLExecutionNode,
     private readonly databaseType: string,
     private readonly databaseTimeZone: string,
-    private readonly connection: any,
+    private readonly connection: DatabaseConnectionInstance,
     private readonly identity: Identity | null,
     private readonly temporaryTables: any[],
     private readonly topSpan: any,
@@ -39,6 +39,32 @@ export class SQLExecutionResult extends Result {
   ) {
     super();
     this.activities = activities;
+  }
+
+  /**
+   * Set the result set
+   * @param resultSet - The result set
+   */
+  setResultSet(resultSet: any): void {
+    this.resultSet = resultSet;
+    this.columnCount = this.columnNames.length;
+  }
+
+  /**
+   * Set the column names
+   * @param columnNames - The column names
+   */
+  setColumnNames(columnNames: string[]): void {
+    this.columnNames = columnNames;
+    this.columnCount = columnNames.length;
+  }
+
+  /**
+   * Set the executed SQL
+   * @param executedSql - The executed SQL
+   */
+  setExecutedSql(executedSql: string): void {
+    this.executedSql = executedSql;
   }
 
   /**
@@ -108,9 +134,9 @@ export class SQLExecutionResult extends Result {
   /**
    * Close the result and release any resources
    */
-  override close(): void {
+  override async close(): Promise<void> {
     if (this.connection && !this.connection.isClosed) {
-      this.connection.close();
+      await this.connection.close();
     }
   }
 }

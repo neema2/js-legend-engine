@@ -1,6 +1,7 @@
 import { ExecutionNode } from './ExecutionNode';
 import { ExecutionNodeVisitor } from '../execution/ExecutionNodeVisitor';
 import { DatabaseConnection } from '../types';
+import { SQLTemplateProcessor, FreemarkerSQLTemplateProcessor } from '../execution/template/SQLTemplateProcessor';
 
 /**
  * Represents a SQL execution node in the execution plan
@@ -82,5 +83,15 @@ export class SQLExecutionNode extends ExecutionNode {
    */
   isResultVoid(): boolean {
     return this.resultType === 'void';
+  }
+
+  /**
+   * Prepare the SQL query for execution by processing templates
+   * @param variables - The variables to substitute in the template
+   * @returns The processed SQL query
+   */
+  prepareForSQLExecution(variables: Record<string, any>): string {
+    const templateProcessor: SQLTemplateProcessor = new FreemarkerSQLTemplateProcessor();
+    return templateProcessor.process(this._sqlQuery, variables);
   }
 }

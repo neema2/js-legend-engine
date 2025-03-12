@@ -177,4 +177,24 @@ describe('PlanExecutor', () => {
     await expect(errorPlanExecutor.execute(executionPlan, {}, 'testUser', new MockIdentity('testUser')))
       .rejects.toThrow('Connection failed');
   });
+
+  test('should process SQL templates with variables', async () => {
+    // Create a SQL execution node with a template
+    const sqlQuery = 'SELECT * FROM test_table WHERE id = ${id}';
+    const connection = {
+      type: { name: 'H2' },
+      timeZone: 'UTC'
+    };
+    const sqlExecutionNode = new SQLExecutionNode(sqlQuery, connection);
+
+    // Create an execution plan with the SQL execution node
+    const executionPlan = new SingleExecutionPlan(sqlExecutionNode);
+
+    // Execute the plan with variables
+    const result = await planExecutor.execute(executionPlan, { id: 1 }, 'testUser', new MockIdentity('testUser'));
+
+    // Verify the result
+    expect(result).toBeDefined();
+    expect(result.activities).toBeDefined();
+  });
 });
