@@ -24,6 +24,9 @@ export class RelationalExecutor {
     const databaseTimeZone = node.getDatabaseTimeZone();
     const connection = this.getConnection(node, identity, executionState);
     
+    // Process the SQL query with variables from the execution state
+    const processedSql = node.prepareForSQLExecution(executionState.getVariables());
+    
     if (node.isMutationSQL) {
       return new SQLUpdateResult(
         executionState.activities,
