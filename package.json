@@ -1,0 +1,23 @@
+{
+  "name": "js-legend-engine",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "mysql2": "^3.13.0",
+    "pg": "^8.14.0",
+    "sqlite3": "^5.1.7"
+  }
+}
