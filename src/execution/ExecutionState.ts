@@ -109,6 +109,14 @@ export class ExecutionState {
     }
     return variables;
   }
+  
+  /**
+   * Get the runtime context
+   * @returns The runtime context
+   */
+  getRuntimeContext(): any {
+    return {};
+  }
 
   /**
    * Create a copy of this execution state

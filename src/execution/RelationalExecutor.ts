@@ -2,12 +2,22 @@ import { SQLExecutionNode } from '../protocol/SQLExecutionNode';
 import { ExecutionState } from './ExecutionState';
 import { SQLExecutionResult } from './SQLExecutionResult';
 import { SQLUpdateResult } from './SQLUpdateResult';
-import { Identity } from '../types';
+import { Identity, DatabaseConnectionInstance } from '../types';
+import { ConnectionManagerSelector } from './connection/ConnectionManagerSelector';
 
 /**
  * Executor for SQL operations
  */
 export class RelationalExecutor {
+  private connectionManagerSelector: ConnectionManagerSelector;
+
+  /**
+   * Create a new RelationalExecutor
+   */
+  constructor() {
+    this.connectionManagerSelector = new ConnectionManagerSelector();
+  }
+
   /**
    * Execute a SQL execution node
    * @param node - The SQL execution node to execute
@@ -22,10 +32,15 @@ export class RelationalExecutor {
   ): Promise<SQLExecutionResult | SQLUpdateResult> {
     const databaseType = node.getDatabaseTypeName();
     const databaseTimeZone = node.getDatabaseTimeZone();
-    const connection = this.getConnection(node, identity, executionState);
+    
+    // Get a database connection
+    const connection = await this.getConnection(node, identity, executionState);
     
     // Process the SQL query with variables from the execution state
     const processedSql = node.prepareForSQLExecution(executionState.getVariables());
+    
+    // Execute the SQL query
+    const result = await connection.query(processedSql);
     
     if (node.isMutationSQL) {
       return new SQLUpdateResult(
@@ -38,7 +53,7 @@ export class RelationalExecutor {
         executionState.getRequestContext()
       );
     } else {
-      return new SQLExecutionResult(
+      const sqlResult = new SQLExecutionResult(
         executionState.activities,
         node,
         databaseType,
@@ -50,6 +65,13 @@ export class RelationalExecutor {
         executionState.getRequestContext(),
         executionState.logSQLWithParamValues()
       );
+      
+      // Set the result properties
+      sqlResult.setResultSet(result);
+      sqlResult.setColumnNames(Object.keys(result.rows[0] || {}));
+      sqlResult.setExecutedSql(processedSql);
+      
+      return sqlResult;
     }
   }
 
@@ -60,24 +82,15 @@ export class RelationalExecutor {
    * @param executionState - The execution state
    * @returns The database connection
    */
-  private getConnection(
+  private async getConnection(
     node: SQLExecutionNode,
     identity: Identity | null,
     executionState: ExecutionState
-  ): any {
-    // In a real implementation, this would get a connection from a pool
-    // or create a new connection based on the database type
-    return {
-      query: async (sql: string) => {
-        console.log(`Executing SQL: ${sql}`);
-        // Mock implementation
-        return { rows: [], rowCount: 0 };
-      },
-      close: () => {
-        console.log('Closing connection');
-        // Mock implementation
-      },
-      isClosed: false
-    };
+  ): Promise<DatabaseConnectionInstance> {
+    return this.connectionManagerSelector.getDatabaseConnection(
+      identity,
+      node.connection,
+      executionState.getRuntimeContext?.() || {}
+    );
   }
 }

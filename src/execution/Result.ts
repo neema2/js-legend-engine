@@ -7,7 +7,7 @@ export abstract class Result {
   /**
    * Close the result and release any resources
    */
-  close(): void {
+  async close(): Promise<void> {
     // No-op in base class
   }
 
