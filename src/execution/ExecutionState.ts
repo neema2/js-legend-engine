@@ -1,4 +1,4 @@
-import { Result } from './Result';
+import { Result, ConstantResult } from './Result';
 import { RequestContext, StoreExecutionState } from '../types';
 
 /**
@@ -94,6 +94,28 @@ export class ExecutionState {
    */
   logSQLWithParamValues(): boolean {
     return true;
+  }
+
+  /**
+   * Get all variables from the execution state
+   * @returns The variables
+   */
+  getVariables(): Record<string, any> {
+    const variables: Record<string, any> = {};
+    for (const [key, result] of Object.entries(this.results)) {
+      if (result instanceof ConstantResult) {
+        variables[key] = result.getValue();
+      }
+    }
+    return variables;
+  }
+  
+  /**
+   * Get the runtime context
+   * @returns The runtime context
+   */
+  getRuntimeContext(): any {
+    return {};
   }
 
   /**

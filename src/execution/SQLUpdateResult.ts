@@ -1,8 +1,8 @@
 import { Result } from './Result';
-import { Identity, RequestContext } from '../types';
+import { Identity, RequestContext, DatabaseConnection, DatabaseConnectionInstance } from '../types';
 
 /**
- * Result of a SQL update
+ * Result of a SQL update operation
  */
 export class SQLUpdateResult extends Result {
   private updateCount: number = 0;
@@ -20,8 +20,8 @@ export class SQLUpdateResult extends Result {
   constructor(
     activities: any[],
     private readonly databaseType: string,
-    private readonly connection: any,
-    private readonly databaseConnection: any,
+    private readonly connection: DatabaseConnectionInstance,
+    private readonly databaseConnection: DatabaseConnection,
     private readonly identity: Identity | null,
     private readonly temporaryTables: any[],
     private readonly requestContext: RequestContext | null
@@ -39,11 +39,27 @@ export class SQLUpdateResult extends Result {
   }
 
   /**
+   * Set the update count
+   * @param count - The update count
+   */
+  setUpdateCount(count: number): void {
+    this.updateCount = count;
+  }
+
+  /**
+   * Get the database type
+   * @returns The database type
+   */
+  getDatabaseType(): string {
+    return this.databaseType;
+  }
+
+  /**
    * Close the result and release any resources
    */
-  override close(): void {
+  override async close(): Promise<void> {
     if (this.connection && !this.connection.isClosed) {
-      this.connection.close();
+      await this.connection.close();
     }
   }
 }

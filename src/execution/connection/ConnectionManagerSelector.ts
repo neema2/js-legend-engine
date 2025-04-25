@@ -1,10 +1,13 @@
-import { Identity, DatabaseConnection } from '../../types';
+import { Identity, DatabaseConnection, DatabaseConnectionInstance } from '../../types';
+import { DuckDBService } from './DuckDBService';
+import { DuckDBConnectionAdapter } from './DuckDBConnectionAdapter';
 
 /**
  * Selects and manages database connections
  */
 export class ConnectionManagerSelector {
   private connectionManagers: Map<string, any> = new Map();
+  private duckDBService: DuckDBService;
 
   /**
    * Create a new ConnectionManagerSelector
@@ -14,7 +17,9 @@ export class ConnectionManagerSelector {
     temporaryTestDb?: any;
     oauthProfiles?: Record<string, any>;
     flowProviderHolder?: any;
-  } = {}) {}
+  } = {}) {
+    this.duckDBService = DuckDBService.getInstance();
+  }
 
   /**
    * Get a database connection
@@ -23,27 +28,25 @@ export class ConnectionManagerSelector {
    * @param runtimeContext - The runtime context
    * @returns The database connection
    */
-  getDatabaseConnection(
+  async getDatabaseConnection(
     identity: Identity | null,
     databaseConnection: DatabaseConnection,
     runtimeContext: any
-  ): any {
-    // In a real implementation, this would get a connection from a pool
-    // or create a new connection based on the database type
+  ): Promise<DatabaseConnectionInstance> {
     const dbType = databaseConnection.type.name;
     
-    // Create a mock connection for demonstration purposes
-    return {
-      query: async (sql: string) => {
-        console.log(`Executing SQL on ${dbType}: ${sql}`);
-        // Mock implementation
-        return { rows: [], rowCount: 0 };
-      },
-      close: async () => {
-        console.log(`Closing connection to ${dbType}`);
-        // Mock implementation
-      },
-      isClosed: false
-    };
+    try {
+      // Initialize DuckDB if not already initialized
+      await this.duckDBService.initialize();
+      
+      // Create a DuckDB connection
+      const duckDBConnection = await this.duckDBService.createConnection();
+      
+      // Create and return a connection adapter
+      return new DuckDBConnectionAdapter(duckDBConnection);
+    } catch (error) {
+      console.error(`Error creating ${dbType} connection:`, error);
+      throw new Error(`Error creating ${dbType} connection: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
